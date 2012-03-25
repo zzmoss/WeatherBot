@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?> <cronentries>   
+<cron>    
+ <url>/weather/ws/regup</url>  
+   <description>Send Reminders at 9 am every day</description>
+       <schedule>every day 13:15</schedule>   
+   <timezone>Asia/Kolkata</timezone>   
+</cron>  
+</cronentries>
