@@ -66,7 +66,7 @@ public class WeatherServ {
     @Path("graph")
     public String plotGraph()
     {
-    	WeatherGraph wg = new WeatherGraph();
+    	WeatherGraphing wg = new WeatherGraphing();
     	return wg.drawGraph();
     }
 	
