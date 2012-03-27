@@ -1,92 +1,99 @@
 package com.weatherbot.sms;
 
-import java.awt.*;
-import java.io.*;
-import java.util.ArrayList;
+import org.w3c.dom.*;
 
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.PreparedQuery;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException; 
 
-import de.progra.charting.*;
-import de.progra.charting.model.*;
-import de.progra.charting.render.*;
+//tsuji:note [a] adding these
+import java.net.URL;
+import java.io.InputStream;
 
 public class WeatherGraphing {
 
-	ArrayList<WeatherInfo> winfo;
-	double[] temp,humi;
-	void fetchData()
-	{
-		PreparedQuery pq1 = Utils.getWeatherResultSet();
-		winfo = new ArrayList<WeatherInfo>();
-		int i=0;
-		for (Entity result : pq1.asIterable()) {
-			i+=1;
-			//winfo.add( new WeatherInfo(result.getProperty("location").toString(),result.getProperty("temperature").toString(),result.getProperty("humidity").toString(),result.getProperty("date").toString()));
-			temp[i]= Double.parseDouble(result.getProperty("temperature").toString());
-		} 
-		
-	}
-	public void drawGraph()
-	{
-System.out.println("** Creating Line Chart Test.");
-        
-		//fetchData();
-		
-        //int[] quadr = {0, 1, 4, 9, 16, 25, 36};
-        double[] exp = {32, 31.76, 34.1, 38, 26, 32, 44.6};        
-        double[] columns = {0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
-        
-        DefaultDataSet[] ds = new DefaultDataSet[1];
-        ds[0] = new DefaultDataSet(ChartUtilities.transformArray(exp),
-                                   ChartUtilities.transformArray(columns),
-                                   CoordSystem.FIRST_YAXIS,
-                                   "Temperature vs something");
-       /*// ds[1] = new DefaultDataSet(ChartUtilities.transformArray(quadr),
-                                   ChartUtilities.transformArray(columns),
-                                   CoordSystem.FIRST_YAXIS,
-                                   "Quadratic Growth");
-        
-      //  ds[2] = new DefaultDataSet(ChartUtilities.transformArray(exp),
-                                   ChartUtilities.transformArray(columns),
-                                   CoordSystem.FIRST_YAXIS,
-                                   "Exponential Growth");
-       */ 
-        String title = "Growth Factor Comparison";
-        
-        int width = 640;
-        int height = 480;
-        
-        DefaultChartDataModel data = new DefaultChartDataModel(ds);
-        
-        // Look at the next 3 lines:
-        data.setAutoScale(true);
-        DefaultChart c = new DefaultChart(data, title, DefaultChart.LINEAR_X_LINEAR_Y);
-        c.addChartRenderer(new LineChartRenderer(c.getCoordSystem(),
-                           data), 1);
-        
-        c.setBounds(new Rectangle(0, 0, width, height));
-        
-        
-        try {
-            ChartEncoder.createPNG(new FileOutputStream("c:/massline.png"), c);
-        } catch(EncodingException e) {
-            System.out.println("** Error creating the simpleline.png file, showing the line chart.");
-            e.getCause().printStackTrace();
-            return;
-        } catch(Exception e) {
-            System.out.println("** Error creating the simpleline.png file, showing the line chart.");
-            e.printStackTrace();
-            return;
-        }
-        System.out.println("successfull.");
-	}
-	
-	public static void main(String[] args)
-	{
-		WeatherGraphing wg = new WeatherGraphing();
-		wg.drawGraph();
-	}
+	 public String drawGraph(){
+		    try {
+		            int s,r;
+		    		DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+		            DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+
+		            //tsuji:note [b] change this
+		            //Document doc = docBuilder.parse (new File("book.xml"));
+		            URL url = new URL("http://weathersms2web.appspot.com/weather/api/history");
+		            String chart= "http://chart.apis.google.com/chart?chs=540x320&cht=lxy&chco=3072F3,FF0000&chtt=SSN%20Weather%20Report&chdl=Humidity|Temperature&chdlp=b&chls=2,4,1|1&chma=5,5,5,25&chd=t:10,20,40,80,90,95,99|";
+		            int len=chart.length();
+		            InputStream stream = url.openStream();
+		            StringBuffer hum = new StringBuffer();
+		            StringBuffer temp = new StringBuffer();
+		            String humchart,tempchart;
+		            hum.append(chart);
+		            temp.append(chart);
+
+		            Document doc = docBuilder.parse(stream);
+		            // normalize text representation
+		            doc.getDocumentElement ().normalize ();
+
+		            NodeList listOfweather = doc.getElementsByTagName("weather");
+		            int totalhumidity = listOfweather.getLength();
+
+		            for(s=0; s<listOfweather.getLength() ; s++){
+		                Node humidityNode = listOfweather.item(s);
+		                if(humidityNode.getNodeType() == Node.ELEMENT_NODE){
+
+		                	Element humidityElement = (Element)humidityNode;
+		                    //-------
+		                    NodeList humidityList = humidityElement.getElementsByTagName("humidity");
+		                    Element humidityElement1 = (Element)humidityList.item(0);
+		                    NodeList textFNList = humidityElement1.getChildNodes();
+		                    hum.append(((Node)textFNList.item(0)).getNodeValue().trim());
+		                    hum.append(",");
+
+
+		                    /*System.out.println("Humidity : " + 
+		                           ((Node)textFNList.item(0)).getNodeValue().trim());*/
+		                    //-------
+		                }
+		            }
+		                    humchart = hum.substring(0,hum.length()-1);
+		                    temp.append(humchart);
+		                    temp.append("|-1|");
+
+		                    for(r=0; r<listOfweather.getLength() ; r++){
+		                    Node humidityNode = listOfweather.item(r);
+		                    Element humidityElement = (Element)humidityNode;
+				            if(humidityNode.getNodeType() == Node.ELEMENT_NODE){
+		                    NodeList temperatureList = humidityElement.getElementsByTagName("temperature");
+		                    Element temperatureElement = (Element)temperatureList.item(0);
+		                    NodeList textLNList = temperatureElement.getChildNodes();
+		                    /*System.out.println("Temperature : " + 
+		                           ((Node)textLNList.item(0)).getNodeValue().trim());*/
+		                    temp.append(((Node)textLNList.item(0)).getNodeValue().trim());
+		                    temp.append(",");
+		                    //----
+
+		                }//end of if clause
+		            }//end of for loop with s var
+
+		            tempchart = temp.substring(0,temp.length()-1);
+		            //System.out.println("Humidity chart link : "+humchart);
+		            System.out.println("Chart link : "+tempchart);
+		            return tempchart;
+
+		        }catch (SAXParseException err) {
+		        System.out.println ("** Parsing error" + ", line " 
+		             + err.getLineNumber () + ", uri " + err.getSystemId ());
+		        System.out.println(" " + err.getMessage ());
+		        }catch (SAXException e) {
+		        Exception x = e.getException ();
+		        ((x == null) ? e : x).printStackTrace ();
+		        }catch (Throwable t) {
+		        t.printStackTrace ();
+		        }
+		    	return null;
+
+	 }
 }
 
 
