@@ -67,7 +67,8 @@ public class WeatherServ {
     public String plotGraph()
     {
     	WeatherGraphing wg = new WeatherGraphing();
-    	return wg.drawGraph();
+    	String link = wg.drawGraph();
+    	return "<html><body><img src='"+link+"'/></body></html>";
     }
 	
 }
